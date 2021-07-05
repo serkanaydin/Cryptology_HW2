@@ -54,26 +54,28 @@ def rsa_key_generation():
 def encrypt_int(plaintext, public_key):
     encryptedList = []
     for num in plaintext:
-        encryptedList.append(pow(num, public_key[1]) % public_key[0])
+        encryptedList.append(pow(num, int(public_key[1])) % int(public_key[0]))
     return encryptedList
 
 
 def decrypt_int(ciphertext, private_key):
     decryptedList = []
     for num in ciphertext:
-        decryptedList.append(pow(num, private_key[1]) % private_key[0])
+        decryptedList.append(pow(num, int(private_key[1])) % int(private_key[0]))
     return decryptedList
 
 
 def encrypt(plaintext, public_key):
     encryptedList = []
-    for byte in plaintext:
-        encryptedList.append(pow(int(chr(byte), 16), public_key[1]) % public_key[0])
+    print(public_key)
+    print(plaintext)
+    for var in plaintext:
+        encryptedList.append(pow(int(var), int(public_key[1])) % int(public_key[0]))
     return encryptedList
 
 
 def decrypt(ciphertext, private_key):
     decryptedList = []
-    for byte in ciphertext:
-        decryptedList.append(hex(pow(byte, private_key[1]) % private_key[0]))
+    for var in ciphertext:
+        decryptedList.append(pow(int(var),int(private_key[1]) % int(private_key[0])))
     return decryptedList

@@ -23,7 +23,7 @@ client_socket.connect((SERVER_HOST, SERVER_PORT))
 
 
 def recv():
-    message = pickle.loads(client_socket.recv(4096))
+    message = pickle.loads(client_socket.recv(1024*1024))
     return message
 
 
@@ -35,10 +35,10 @@ def send(message):
 def image_encrpytion(path):
     image = Image.open(path)
     data = image.convert("RGB").tobytes()
-    iv = Random.new().read(int(8))
+    iv = Random.new().read(int(16))
     aes_key = Random.new().read(int(32))
     encrypted_image = AES.encrypt(data, aes_key, iv)
-    return encrypted_image, aes_key, iv
+    return encrypted_image, image.mode, image.size, aes_key, iv
 
 
 def login(username):
@@ -64,19 +64,21 @@ def register():
 
 def upload(path):
     image_name = os.path.basename(path)
-    encrypted_image, aes_key, iv = image_encrpytion(path)
-    digest = hashlib.sha256(encrypted_image)
-    private_key_encrypted_digest = RSA.encrypt(str(digest), user_private_key)
-    public_key_encrypted_aes_iv = RSA.encrypt("{aes_key} {iv}".format(aes_key=aes_key, iv=iv), server_public_key)
+    encrypted_image, mode, size, aes_key, iv = image_encrpytion(path)
+    digest = hashlib.sha256(encrypted_image).digest()
+    private_key_encrypted_digest = RSA.encrypt(digest, user_private_key)
+    public_key_encrypted_aes= RSA.encrypt(aes_key,server_public_key)
+    public_key_encrypted_iv = RSA.encrypt(iv, server_public_key)
 
     upload_image_message = {
         "type": "UPLOAD_IMAGE",
         "data": {
             "username": username,
             "image_name": image_name,
+            "mode": mode,
+            "size": size,
             "encrypted_image": encrypted_image,
             "private_key_encrypted_digest": private_key_encrypted_digest,
-            "public_key_encrypted_aes_iv": public_key_encrypted_aes_iv
         }
     }
     send(upload_image_message)
