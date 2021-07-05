@@ -38,10 +38,15 @@ def image_encrpytion(path):
     iv = Random.new().read(int(16))
     aes_key = Random.new().read(int(32))
     encrypted_image = AES.encrypt(data, aes_key, iv)
+    print(image.size,image.mode)
     return encrypted_image, image.mode, image.size, aes_key, iv
 
 
-def login(username):
+def login(name):
+    global username
+    username=name
+    print("public: ", user_public_key)
+    print("private: ", user_private_key)
     message = {
         "type": "LOGIN",
         "data": {
@@ -79,8 +84,11 @@ def upload(path):
             "size": size,
             "encrypted_image": encrypted_image,
             "private_key_encrypted_digest": private_key_encrypted_digest,
+            "public_key_encrypted_aes":public_key_encrypted_aes,
+            "public_key_encrypted_iv":public_key_encrypted_iv
         }
     }
+
     send(upload_image_message)
 
 
@@ -117,6 +125,8 @@ def console_application():
 def main():
     global user_public_key
     global user_private_key
+    print("public: ", user_public_key)
+    print("private: ", user_private_key)
     user_public_key, user_private_key = RSA.rsa_key_generation()
     console_application()
 

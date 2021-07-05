@@ -17,7 +17,7 @@ class Image(db.Entity):
     name = orm.Required(str)
     mode = orm.Required(str)
     size = orm.Required(str)
-    encrypted_image = orm.Required(str)
+    encrypted_image = orm.Required(bytes)
     uploader_name = orm.Required(str)
     iv = orm.Required(str)
     aes = orm.Required(str)
@@ -41,6 +41,12 @@ def delete_user(username):
 def get_user(username):
     user = Client.get(lambda c: c.username == username)
     return user
+
+@db_session
+def update_user(username,public_key,certificate):
+    user = Client.get(lambda c: c.username == username)
+    user.set(public_key=public_key,certificate=certificate)
+
 
 
 @db_session
