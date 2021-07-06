@@ -23,7 +23,7 @@ client_socket.connect((SERVER_HOST, SERVER_PORT))
 
 
 def recv():
-    message = pickle.loads(client_socket.recv(1024*1024))
+    message = pickle.loads(client_socket.recv(1024 * 1024))
     return message
 
 
@@ -38,13 +38,14 @@ def image_encrpytion(path):
     iv = RSA.generate_key(128)
     aes_key = RSA.generate_key(256)
     encrypted_image = AES.encrypt(data, aes_key, iv)
-    print(image.size,image.mode)
+    print(image.size, image.mode)
     return encrypted_image, image.mode, image.size, aes_key, iv
 
 
 def login(name):
     global username
-    username=name
+    username = name
+    read_keys()
     print("public: ", user_public_key)
     print("private: ", user_private_key)
     message = {
@@ -57,6 +58,7 @@ def login(name):
 
 
 def register():
+    generate_keys()
     message = {
         "type": "REGISTER",
         "data": {
@@ -71,10 +73,10 @@ def upload(path):
     image_name = os.path.basename(path)
     encrypted_image, mode, size, aes_key, iv = image_encrpytion(path)
     digest = hashlib.sha256(encrypted_image).hexdigest().lower()
-    print("digest: ",digest)
-    print("aes_key-upload",aes_key)
+    print("digest: ", digest)
+    print("aes_key-upload", aes_key)
     private_key_encrypted_digest = RSA.encrypt(digest, user_private_key)
-    public_key_encrypted_aes= RSA.encrypt(aes_key,server_public_key)
+    public_key_encrypted_aes = RSA.encrypt(aes_key, server_public_key)
     public_key_encrypted_iv = RSA.encrypt(iv, server_public_key)
 
     upload_image_message = {
@@ -86,8 +88,8 @@ def upload(path):
             "size": size,
             "encrypted_image": encrypted_image,
             "private_key_encrypted_digest": private_key_encrypted_digest,
-            "public_key_encrypted_aes":public_key_encrypted_aes,
-            "public_key_encrypted_iv":public_key_encrypted_iv
+            "public_key_encrypted_aes": public_key_encrypted_aes,
+            "public_key_encrypted_iv": public_key_encrypted_iv
         }
     }
 
@@ -122,6 +124,27 @@ def console_application():
             upload(path)
         elif option[0] == "-d":
             download()
+
+
+def read_keys():
+    global user_public_key
+    global user_private_key
+    f = open(username + ".txt", "r")
+    lines = f.readlines()
+    line = lines[0].split()
+    user_public_key = [line[0], line[1]]
+    line = lines[1].split()
+    user_private_key = [line[0], line[1]]
+    print("userpub",user_public_key)
+    print("userpriv",user_private_key)
+
+
+def generate_keys():
+    global user_public_key
+    global user_private_key
+    user_public_key, user_private_key = RSA.rsa_key_generation()
+    f = open(username + ".txt", "a")
+    f.write("{n} {e}\n{n} {d}".format(n=user_public_key[0], e=user_public_key[1], d=user_private_key[1]))
 
 
 def main():
