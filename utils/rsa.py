@@ -67,16 +67,15 @@ def decrypt_int(ciphertext, private_key):
 
 def encrypt(plaintext, public_key):
     encryptedList = []
+    print(public_key)
+    print(plaintext)
     for var in plaintext:
         encryptedList.append(pow(int(var), int(public_key[1])) % int(public_key[0]))
     return encryptedList
 
 
 def decrypt(ciphertext, private_key):
-    print("cipher text:",ciphertext)
     decryptedList = []
     for var in ciphertext:
-        decryptedList.append(hex(pow(var,int(private_key[1])) % int(private_key[0])))
-    print("decrypted text:", decryptedList)
+        decryptedList.append(pow(int(var),int(private_key[1]) % int(private_key[0])))
     return decryptedList
-#-u C:\Users\serka\Desktop\test.jpg
