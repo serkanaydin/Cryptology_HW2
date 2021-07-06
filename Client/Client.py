@@ -16,7 +16,7 @@ username = ""
 user_public_key = []
 user_private_key = []
 
-server_public_key = [205, 101]
+server_public_key = [123, 17]
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_HOST, SERVER_PORT))
@@ -35,13 +35,18 @@ def send(message):
 def image_encrpytion(path):
     image = Image.open(path)
     data = image.convert("RGB").tobytes()
-    iv = Random.new().read(int(16))
-    aes_key = Random.new().read(int(32))
+    iv = RSA.generate_key(128)
+    aes_key = RSA.generate_key(256)
     encrypted_image = AES.encrypt(data, aes_key, iv)
+    print(image.size,image.mode)
     return encrypted_image, image.mode, image.size, aes_key, iv
 
 
-def login(username):
+def login(name):
+    global username
+    username=name
+    print("public: ", user_public_key)
+    print("private: ", user_private_key)
     message = {
         "type": "LOGIN",
         "data": {
@@ -65,7 +70,9 @@ def register():
 def upload(path):
     image_name = os.path.basename(path)
     encrypted_image, mode, size, aes_key, iv = image_encrpytion(path)
-    digest = hashlib.sha256(encrypted_image).digest()
+    digest = hashlib.sha256(encrypted_image).hexdigest().lower()
+    print("digest: ",digest)
+    print("aes_key-upload",aes_key)
     private_key_encrypted_digest = RSA.encrypt(digest, user_private_key)
     public_key_encrypted_aes= RSA.encrypt(aes_key,server_public_key)
     public_key_encrypted_iv = RSA.encrypt(iv, server_public_key)
@@ -79,8 +86,11 @@ def upload(path):
             "size": size,
             "encrypted_image": encrypted_image,
             "private_key_encrypted_digest": private_key_encrypted_digest,
+            "public_key_encrypted_aes":public_key_encrypted_aes,
+            "public_key_encrypted_iv":public_key_encrypted_iv
         }
     }
+
     send(upload_image_message)
 
 
@@ -117,6 +127,8 @@ def console_application():
 def main():
     global user_public_key
     global user_private_key
+    print("public: ", user_public_key)
+    print("private: ", user_private_key)
     user_public_key, user_private_key = RSA.rsa_key_generation()
     console_application()
 

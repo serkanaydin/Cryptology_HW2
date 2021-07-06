@@ -13,12 +13,16 @@ def convert_to_RGB(data):
 
 
 def encrypt(plaintext, aes_key, iv):
-    cipher = AES.new(aes_key, AES.MODE_CBC, iv)
+    print("aes-key")
+    print(aes_key)
+    cipher = AES.new(bytearray.fromhex(aes_key), AES.MODE_CBC, bytearray.fromhex(iv))
     encrypted_image = cipher.encrypt(pad(plaintext))[:len(plaintext)]
     return encrypted_image
 
 
 def decrypt(ciphertext, aes_key, iv):
+    print("decrypted aes_key")
+    print(aes_key)
     decrypter = AES.new(aes_key, AES.MODE_CBC, iv)
     decrypted_image = decrypter.decrypt(ciphertext)[:len(ciphertext)]
     return decrypted_image

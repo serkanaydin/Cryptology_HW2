@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 def primesInRange(x, y):
     prime_list = []
@@ -25,6 +26,10 @@ def modInverse(e, z):
         if ((e % z) * (x % z)) % z == 1:
             return x
     return -1
+
+def generate_key(size):
+    key: str = (hex(random.getrandbits(size)))[2:]  # 256 bit key generation,encryption and decryption
+    return key
 
 
 def relativelyPrimesInRange(z):
@@ -65,17 +70,19 @@ def decrypt_int(ciphertext, private_key):
     return decryptedList
 
 
-def encrypt(plaintext, public_key):
+def encrypt(plaintext,key):
+    print("encrypted-key",key)
     encryptedList = []
-    print(public_key)
-    print(plaintext)
-    for var in plaintext:
-        encryptedList.append(pow(int(var), int(public_key[1])) % int(public_key[0]))
+    for byte in plaintext:
+        encryptedList.append(pow(int(byte, 16), int(key[1])) % int(key[0]))
     return encryptedList
 
 
-def decrypt(ciphertext, private_key):
+def decrypt(ciphertext,key):
+    print("decrypt-key", key)
     decryptedList = []
-    for var in ciphertext:
-        decryptedList.append(pow(int(var),int(private_key[1]) % int(private_key[0])))
+    for byte in ciphertext:
+        decryptedList.append(hex(pow(byte, int(key[1])) % int(key[0])))
     return decryptedList
+#-u C:\Users\serka\Desktop\test.jpg
+#-u /home/serkan/Desktop/test.png

@@ -1,5 +1,5 @@
 from pony import orm
-from pony.orm import Database, db_session
+from pony.orm import Database, db_session, StrArray, IntArray
 
 db = Database()
 db.bind(provider='sqlite', filename="cryptology.db", create_db=True)
@@ -19,9 +19,9 @@ class Image(db.Entity):
     size = orm.Required(str)
     encrypted_image = orm.Required(str)
     uploader_name = orm.Required(str)
-    iv = orm.Required(str)
-    aes = orm.Required(str)
-    digest = orm.Required(str)
+    iv = orm.Required(StrArray)
+    aes = orm.Required(StrArray)
+    digest = orm.Required(IntArray)
 
 
 db.generate_mapping(create_tables=True)
@@ -41,6 +41,12 @@ def delete_user(username):
 def get_user(username):
     user = Client.get(lambda c: c.username == username)
     return user
+
+@db_session
+def update_user(username,public_key,certificate):
+    user = Client.get(lambda c: c.username == username)
+    user.set(public_key=public_key,certificate=certificate)
+
 
 
 @db_session
