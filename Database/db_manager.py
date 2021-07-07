@@ -28,6 +28,7 @@ class Notification(db.Entity):
     id = orm.PrimaryKey(int, auto=True)
     image_name = orm.Required(str)
     username = orm.Required(str)
+    uploader_username = orm.Required(str)
 
 
 db.generate_mapping(create_tables=True)
@@ -88,5 +89,5 @@ def del_notifications(username):
     Notification.select(lambda c: c.username == username).delete(bulk=True)
 
 @db_session
-def add_notification(username, image_name):
-    notification = Notification(username=username, image_name=image_name)
+def add_notification(username, image_name,uploader_username):
+    notification = Notification(username=username, image_name=image_name,uploader_username=uploader_username)

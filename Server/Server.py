@@ -17,10 +17,10 @@ server_socket.listen()
 connected_list=[]
 
 
-def create_notifications(image_name):
+def create_notifications(uploader_username,image_name):
     user_list = get_all_user()
     for user in user_list:
-        add_notification(username=user.username,image_name=image_name)
+        add_notification(username=user.username,image_name=image_name,uploader_username=uploader_username)
 
 def upload(message):
     uploader_username = message["data"]["username"]
@@ -54,7 +54,7 @@ def upload(message):
         print(client[0])
         send(client[0],message)
 
-    create_notifications(image_name)
+    create_notifications(uploader_username,image_name)
 
 
 def register(message):
@@ -143,7 +143,7 @@ def server_response(client_connection, client_address):
             notifications=get_notifications(username)
             dict={}
             for notification in notifications:
-                dict[notification.username]=notification.image_name
+                dict[notification.uploader_username]=notification.image_name
 
             message={
                 "type": "NOTIFICATION_LIST",
