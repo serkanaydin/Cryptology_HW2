@@ -8,8 +8,8 @@ db.bind(provider='sqlite', filename="cryptology.db", create_db=True)
 class Client(db.Entity):
     id = orm.PrimaryKey(int, auto=True)
     username = orm.Required(str)
-    public_key = orm.Required(str)
-    certificate = orm.Required(str)
+    public_key = orm.Required(IntArray)
+    certificate = orm.Required(IntArray)
 
 
 class Image(db.Entity):
@@ -17,7 +17,7 @@ class Image(db.Entity):
     name = orm.Required(str)
     mode = orm.Required(str)
     size = orm.Required(str)
-    encrypted_image = orm.Required(str)
+    encrypted_image = orm.Required(bytes)
     uploader_name = orm.Required(str)
     iv = orm.Required(StrArray)
     aes = orm.Required(StrArray)
@@ -53,3 +53,9 @@ def update_user(username,public_key,certificate):
 def insert_image(name, mode, size, encrypted_image, uploader_name, aes, iv, digest):
     image = Image(name=name, mode=mode, size=size, encrypted_image=encrypted_image,
                   uploader_name=uploader_name, aes=aes, iv=iv, digest=digest)
+
+@db_session
+def get_image(image_name):
+    image = Image.get(lambda i: i.name == image_name)
+    return image
+

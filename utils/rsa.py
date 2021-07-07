@@ -82,7 +82,7 @@ def decrypt(ciphertext,key):
     print("decrypt-key", key)
     decryptedList = []
     for byte in ciphertext:
-        decryptedList.append(hex(pow(byte, int(key[1])) % int(key[0])))
+        decryptedList.append(hex(pow(byte, int(key[1])) % int(key[0])).replace("0x",""))
     return decryptedList
 #-u C:\Users\serka\Desktop\test.jpg
 #-u /home/serkan/Desktop/test.png

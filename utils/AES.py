@@ -1,4 +1,5 @@
 from Crypto.Cipher import AES
+from PIL import Image
 
 
 def pad(data):  # hexadecimal formatting
@@ -17,12 +18,20 @@ def encrypt(plaintext, aes_key, iv):
     print(aes_key)
     cipher = AES.new(bytearray.fromhex(aes_key), AES.MODE_CBC, bytearray.fromhex(iv))
     encrypted_image = cipher.encrypt(pad(plaintext))[:len(plaintext)]
+    print("typeof encrypted",type(encrypted_image))
     return encrypted_image
 
 
-def decrypt(ciphertext, aes_key, iv):
+def decrypt(ciphertext,name,mode,size, aes_key, iv):
     print("decrypted aes_key")
     print(aes_key)
-    decrypter = AES.new(aes_key, AES.MODE_CBC, iv)
+    print("iv-decrypt",iv)
+    decrypter = AES.new(bytearray.fromhex(aes_key), AES.MODE_CBC, bytearray.fromhex(iv))
     decrypted_image = decrypter.decrypt(ciphertext)[:len(ciphertext)]
+    decrypted = convert_to_RGB(decrypted_image)
+    size=size.split()
+    size=(int(size[0]),int(size[1]))
+    decryptedImage = Image.new(mode, size)
+    decryptedImage.putdata(decrypted)
+    decryptedImage.save(str(name) + ".png", "PNG")
     return decrypted_image

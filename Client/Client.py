@@ -23,7 +23,13 @@ client_socket.connect((SERVER_HOST, SERVER_PORT))
 
 
 def recv():
-    message = pickle.loads(client_socket.recv(1024 * 1024))
+    data = b''
+    l = 4096
+    while l == 4096:
+        d = client_socket.recv(l)
+        l = len(d)
+        data += d
+    message = pickle.loads(data)
     return message
 
 
@@ -37,6 +43,7 @@ def image_encrpytion(path):
     data = image.convert("RGB").tobytes()
     iv = RSA.generate_key(128)
     aes_key = RSA.generate_key(256)
+    print("image-encrytion aeskey",aes_key)
     encrypted_image = AES.encrypt(data, aes_key, iv)
     print(image.size, image.mode)
     return encrypted_image, image.mode, image.size, aes_key, iv
@@ -72,6 +79,7 @@ def register():
 def upload(path):
     image_name = os.path.basename(path)
     encrypted_image, mode, size, aes_key, iv = image_encrpytion(path)
+    size= ""+str(size[0]) + " " + str(size[1])
     digest = hashlib.sha256(encrypted_image).hexdigest().lower()
     print("digest: ", digest)
     print("aes_key-upload", aes_key)
@@ -96,8 +104,41 @@ def upload(path):
     send(upload_image_message)
 
 
-def download():
-    pass
+def download_request(image_name):
+    download_image_message = {
+        "type": "DOWNLOAD_IMAGE",
+        "data": {
+            "username": username,
+            "image_name": image_name
+        }
+    }
+    send(download_image_message)
+
+def download_image(message):
+    if message["type"] == "IMAGE_RECEIVED":
+        image_name = message["data"]["image_name"]
+        encrypted_image=message["data"]["encrypted_image"]
+        digest = message["data"]["digest"]
+        uploader_certificate = message["data"]["certificate"]
+        requester_public_key_encrypted_aes = message["data"]["requester_public_key_encrypted_aes"]
+        requester_public_key_encrypted_iv = message["data"]["requester_public_key_encrypted_iv"]
+        image_mode = message["data"]["mode"]
+        image_size = message["data"]["size"]
+
+        uploader_public_key=RSA.decrypt_int(uploader_certificate,server_public_key)
+        digest = RSA.decrypt(digest,uploader_public_key)
+        aes = RSA.decrypt(requester_public_key_encrypted_aes,user_private_key)
+        iv = RSA.decrypt(requester_public_key_encrypted_iv, user_private_key)
+        aes_str=""
+        for hex in aes:
+            aes_str+= str(hex)
+        iv_str = ""
+        for hex in iv:
+            iv_str += str(hex)
+        print("before aes decrypt",aes)
+        AES.decrypt(encrypted_image,image_name,image_mode,image_size,aes_str,iv_str)
+
+
 
 
 def console_application():
@@ -123,7 +164,12 @@ def console_application():
             path = option[1]
             upload(path)
         elif option[0] == "-d":
-            download()
+            image_name = option[1]
+            download_request(image_name)
+
+        message = recv()
+        if message["type"] == "IMAGE_RECEIVED":
+            download_image(message)
 
 
 def read_keys():

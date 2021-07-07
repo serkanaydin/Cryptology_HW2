@@ -15,45 +15,104 @@ server_socket.bind((SERVER_HOST, SERVER_PORT))
 server_socket.listen()
 
 
+def upload(message):
+    uploader_username = message["data"]["username"]
+    print(uploader_username)
+    image_name = message["data"]["image_name"]
+    mode = message["data"]["mode"]
+    size = message["data"]["size"]
+    encrypted_image = message["data"]["encrypted_image"]
+    private_key_encrypted_digest = message["data"]["private_key_encrypted_digest"]
+
+    public_key_encrypted_aes = message["data"]["public_key_encrypted_aes"]
+    public_key_encrypted_iv = message["data"]["public_key_encrypted_iv"]
+    aes = RSA.decrypt(public_key_encrypted_aes, server_private_key)
+    print("aes-key decrypted", aes)
+    iv = RSA.decrypt(public_key_encrypted_iv, server_private_key)
+    mode = str(mode)
+    size = str(size)
+    encrypted_image = encrypted_image
+    private_key_encrypted_digest = private_key_encrypted_digest
+    insert_image(name=image_name, mode=mode, size=size, encrypted_image=encrypted_image,
+                 uploader_name=uploader_username, aes=aes, iv=iv, digest=private_key_encrypted_digest)
+    print("Image was sent")
+
+
+def register(message):
+    username = message["data"]["username"]
+    user_public_key = message["data"]["public_key"]
+    user_certificate = RSA.encrypt_int(user_public_key, server_private_key)
+    if get_user(username) is None:
+        insert_user(username=username, public_key=user_public_key, certificate=user_certificate)
+        print("Registered user: ", username)
+
+
+def login(message):
+    username = message["data"]["username"]
+    print(username, " is logon")
+
+
+def download(client_connection, message):
+    requester_username = message["data"]["username"]
+    print("req_user",requester_username)
+    requester_user = get_user(requester_username)
+    image_name = message["data"]["image_name"]
+    image = get_image(image_name)
+    uploader_username = image.uploader_name
+    uploader_user = get_user(uploader_username)
+    uploader_certificate = uploader_user.certificate
+    digest = image.digest
+    upload_image_aes = image.aes
+    upload_image_iv = image.iv
+    encrypted_image = image.encrypted_image
+
+    requester_public_key = requester_user.public_key
+    requester_public_key_encrypted_aes = RSA.encrypt(upload_image_aes, requester_public_key)
+    requester_public_key_encrypted_iv = RSA.encrypt(upload_image_iv, requester_public_key)
+
+    message = {
+        "type": "IMAGE_RECEIVED",
+        "data": {
+            "image_name": image_name,
+            "encrypted_image": encrypted_image,
+            "digest": digest,
+            "certificate": uploader_certificate,
+            "mode": image.mode,
+            "size": image.size,
+            "requester_public_key_encrypted_aes": requester_public_key_encrypted_aes,
+            "requester_public_key_encrypted_iv": requester_public_key_encrypted_iv
+        }
+    }
+    send(client_connection, message)
+
+
 def server_response(client_connection, client_address):
     while True:
         message = recv(client_connection)
         if message["type"] == "REGISTER":
-            username = message["data"]["username"]
-            user_public_key = message["data"]["public_key"]
-            user_certificate = RSA.encrypt_int(user_public_key, server_private_key)
-            user_public_key = "" + str(user_public_key[0]) + " " + str(user_public_key[1])
-            user_certificate = "" + str(user_certificate[0]) + " " + str(user_certificate[1])
-            if get_user(username) is None:
-                insert_user(username=username, public_key=user_public_key, certificate=user_certificate)
-                print("Registered user: ", username)
-
-        if message["type"] == "LOGIN":
-            username = message["data"]["username"]
-            print(username, " is logon")
+            register(message)
+            message = {
+                "type": "REGISTER SUCCESFUL"
+            }
+            send(client_connection, message)
+        elif message["type"] == "LOGIN":
+            login(message)
+            message = {
+                "type": "LOGIN SUCCESFUL"
+            }
+            send(client_connection, message)
         elif message["type"] == "UPLOAD_IMAGE":
-            uploader_username = message["data"]["username"]
-            print(uploader_username)
-            image_name = message["data"]["image_name"]
-            mode = message["data"]["mode"]
-            size = message["data"]["size"]
-            encrypted_image = message["data"]["encrypted_image"]
-            private_key_encrypted_digest = message["data"]["private_key_encrypted_digest"]
-
-            public_key_encrypted_aes = message["data"]["public_key_encrypted_aes"]
-            public_key_encrypted_iv = message["data"]["public_key_encrypted_iv"]
-            aes = RSA.decrypt(public_key_encrypted_aes, server_private_key)
-            print("aes-key decrypted",aes)
-            iv = RSA.decrypt(public_key_encrypted_iv, server_private_key)
-            mode=str(mode)
-            size=str(size)
-            encrypted_image=str(encrypted_image)
-            aes=aes
-            iv=iv
-            private_key_encrypted_digest=private_key_encrypted_digest
-
-            insert_image(name=image_name, mode=mode, size=size, encrypted_image=encrypted_image,
-                         uploader_name=uploader_username, aes=aes, iv=iv, digest=private_key_encrypted_digest)
+            upload(message)
+            message = {
+                "type": "UPLOAD SUCCESFUL"
+            }
+            send(client_connection, message)
+        elif message["type"] == "DOWNLOAD_IMAGE":
+            download(client_connection, message)
+            message = {
+                "type": "DOWNLOAD SUCCESFULLL"
+            }
+            send(client_connection, message)
 
 
 def send(client_connection, message):
