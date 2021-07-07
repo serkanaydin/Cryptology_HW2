@@ -17,6 +17,11 @@ server_socket.listen()
 connected_list=[]
 
 
+def create_notifications(image_name):
+    user_list = get_all_user()
+    for user in user_list:
+        add_notification(username=user.username,image_name=image_name)
+
 def upload(message):
     uploader_username = message["data"]["username"]
     print(uploader_username)
@@ -48,6 +53,8 @@ def upload(message):
         }
         print(client[0])
         send(client[0],message)
+
+    create_notifications(image_name)
 
 
 def register(message):
@@ -110,7 +117,7 @@ def server_response(client_connection, client_address):
         elif message["type"] == "LOGIN":
             login(message)
             message = {
-                "type": "LOGIN SUCCESFUL"
+                "type": "LOGIN SUCCESSFUL"
             }
             send(client_connection, message)
         elif message["type"] == "UPLOAD_IMAGE":
@@ -126,6 +133,24 @@ def server_response(client_connection, client_address):
             }
             send(client_connection, message)
 
+        elif message["type"] == "NOTIFICATION_RECEIVED":
+            received_user=message["data"]["received_user"]
+            image_name = message["data"]["image_name"]
+            del_notification(received_user,image_name)
+
+        elif message["type"] == "GET_NOTIFICATIONS":
+            username= message["username"]
+            notifications=get_notifications(username)
+            dict={}
+            for notification in notifications:
+                dict[notification.username]=notification.image_name
+
+            message={
+                "type": "NOTIFICATION_LIST",
+                "notification_list" : dict
+            }
+            send(client_connection,message)
+            del_notifications(username)
 
 def send(client_connection, message):
     client_connection.send(pickle.dumps(message))

@@ -18,20 +18,20 @@ def encrypt(plaintext, aes_key, iv):
     print(aes_key)
     cipher = AES.new(bytearray.fromhex(aes_key), AES.MODE_CBC, bytearray.fromhex(iv))
     encrypted_image = cipher.encrypt(pad(plaintext))[:len(plaintext)]
-    print("typeof encrypted",type(encrypted_image))
+    print("typeof encrypted", type(encrypted_image))
     return encrypted_image
 
 
-def decrypt(ciphertext,name,mode,size, aes_key, iv):
+def decrypt(ciphertext, name, mode, size, aes_key, iv):
     print("decrypted aes_key")
     print(aes_key)
-    print("iv-decrypt",iv)
+    print("iv-decrypt", iv)
     decrypter = AES.new(bytearray.fromhex(aes_key), AES.MODE_CBC, bytearray.fromhex(iv))
     decrypted_image = decrypter.decrypt(ciphertext)[:len(ciphertext)]
     decrypted = convert_to_RGB(decrypted_image)
-    size=size.split()
-    size=(int(size[0]),int(size[1]))
+    size = size.split()
+    size = (int(size[0]), int(size[1]))
     decryptedImage = Image.new(mode, size)
     decryptedImage.putdata(decrypted)
-    decryptedImage.save(str(name) + ".png", "PNG")
+    decryptedImage.save(str(name), "PNG")
     return decrypted_image

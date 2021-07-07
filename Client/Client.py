@@ -6,7 +6,7 @@ import pickle
 import sys
 from pathlib import Path
 
-sys.path.insert(0,"..")
+sys.path.insert(0, "..")
 from PIL import Image
 import utils.rsa as RSA
 import utils.AES as AES
@@ -21,10 +21,9 @@ user_private_key = []
 
 server_public_key = [123, 17]
 
-
-
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_HOST, SERVER_PORT))
+
 
 def recv():
     data = b''
@@ -47,10 +46,24 @@ def image_encrpytion(path):
     data = image.convert("RGB").tobytes()
     iv = RSA.generate_key(128)
     aes_key = RSA.generate_key(256)
-    print("image-encrytion aeskey",aes_key)
+    print("image-encrytion aeskey", aes_key)
     encrypted_image = AES.encrypt(data, aes_key, iv)
     print(image.size, image.mode)
     return encrypted_image, image.mode, image.size, aes_key, iv
+
+
+def get_client_notifications():
+    message = {
+        "type": "GET_NOTIFICATIONS",
+        "username": username
+    }
+    send(message)
+    message = recv()
+    if message["type"] == "NOTIFICATION_LIST":
+        notifications = message["notification_list"]
+        for uploader, image_name in notifications.items():
+            print("Uploader: {uploader} Image name: {image_name}".format(uploader=uploader,
+                                                                         image_name=image_name))
 
 
 def login(name):
@@ -83,7 +96,7 @@ def register():
 def upload(path):
     image_name = os.path.basename(path)
     encrypted_image, mode, size, aes_key, iv = image_encrpytion(path)
-    size= ""+str(size[0]) + " " + str(size[1])
+    size = "" + str(size[0]) + " " + str(size[1])
     digest = hashlib.sha256(encrypted_image).hexdigest().lower()
     print("digest: ", digest)
     print("aes_key-upload", aes_key)
@@ -118,10 +131,11 @@ def download_request(image_name):
     }
     send(download_image_message)
 
+
 def download_image(message):
     if message["type"] == "IMAGE_RECEIVED":
         image_name = message["data"]["image_name"]
-        encrypted_image=message["data"]["encrypted_image"]
+        encrypted_image = message["data"]["encrypted_image"]
         digest = message["data"]["digest"]
         uploader_certificate = message["data"]["certificate"]
         requester_public_key_encrypted_aes = message["data"]["requester_public_key_encrypted_aes"]
@@ -129,30 +143,28 @@ def download_image(message):
         image_mode = message["data"]["mode"]
         image_size = message["data"]["size"]
 
-        uploader_public_key=RSA.decrypt_int(uploader_certificate,server_public_key)
-        uploader_public_key=[int(uploader_public_key[0],16),int(uploader_public_key[1],16)]
-        print("upload_public_key",uploader_public_key)
-        digest = RSA.decrypt_int(digest,uploader_public_key)
+        uploader_public_key = RSA.decrypt_int(uploader_certificate, server_public_key)
+        uploader_public_key = [int(uploader_public_key[0], 16), int(uploader_public_key[1], 16)]
+        print("upload_public_key", uploader_public_key)
+        digest = RSA.decrypt_int(digest, uploader_public_key)
         incoming_digest = ""
         for hex in digest:
             incoming_digest += str(hex)
-        generated_digest=hashlib.sha256(encrypted_image).hexdigest().lower()
-        print("id",incoming_digest)
+        generated_digest = hashlib.sha256(encrypted_image).hexdigest().lower()
+        print("id", incoming_digest)
         print("gd", generated_digest)
-        if incoming_digest==generated_digest:
+        if incoming_digest == generated_digest:
             print("Integrity provided")
-            aes = RSA.decrypt(requester_public_key_encrypted_aes,user_private_key)
+            aes = RSA.decrypt(requester_public_key_encrypted_aes, user_private_key)
             iv = RSA.decrypt(requester_public_key_encrypted_iv, user_private_key)
-            aes_str=""
+            aes_str = ""
             for hex in aes:
-                aes_str+= str(hex)
+                aes_str += str(hex)
             iv_str = ""
             for hex in iv:
                 iv_str += str(hex)
-            print("before aes decrypt",aes)
-            AES.decrypt(encrypted_image,image_name,image_mode,image_size,aes_str,iv_str)
-
-
+            print("before aes decrypt", aes)
+            AES.decrypt(encrypted_image, image_name, image_mode, image_size, aes_str, iv_str)
 
 
 def console_application():
@@ -184,10 +196,25 @@ def console_application():
             pass
 
         message = recv()
-        if message["type"]=="NOTIFICATION":
-            print("notification")
-        if message["type"]=="IMAGE_RECEIVED":
+        if message["type"] == "NOTIFICATION":
+            uploader_username = message["data"]["username"]
+            image_name = message["data"]["image_name"]
+            print(uploader_username + " uploaded image: " + image_name)
+            message = {
+                "type": "NOTIFICATION_RECEIVED",
+                "data": {
+                    "received_user": username,
+                    "image_name": image_name
+                }
+            }
+            send(message)
+
+        if message["type"] == "IMAGE_RECEIVED":
             download_image(message)
+
+        if message["type"] == "LOGIN SUCCESSFUL":
+            get_client_notifications()
+
 
 def read_keys():
     global user_public_key
@@ -198,8 +225,8 @@ def read_keys():
     user_public_key = [line[0], line[1]]
     line = lines[1].split()
     user_private_key = [line[0], line[1]]
-    print("userpub",user_public_key)
-    print("userpriv",user_private_key)
+    print("userpub", user_public_key)
+    print("userpriv", user_private_key)
 
 
 def generate_keys():
