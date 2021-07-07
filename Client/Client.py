@@ -3,7 +3,10 @@ import os
 import socket
 import pickle
 
-from Crypto import Random
+import sys
+from pathlib import Path
+
+sys.path.insert(0,"..")
 from PIL import Image
 import utils.rsa as RSA
 import utils.AES as AES
@@ -18,9 +21,10 @@ user_private_key = []
 
 server_public_key = [123, 17]
 
+
+
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_HOST, SERVER_PORT))
-
 
 def recv():
     data = b''
@@ -176,11 +180,14 @@ def console_application():
         elif option[0] == "-d":
             image_name = option[1]
             download_request(image_name)
+        elif option[0] == "-c":
+            pass
 
         message = recv()
-        if message["type"] == "IMAGE_RECEIVED":
+        if message["type"]=="NOTIFICATION":
+            print("notification")
+        if message["type"]=="IMAGE_RECEIVED":
             download_image(message)
-
 
 def read_keys():
     global user_public_key

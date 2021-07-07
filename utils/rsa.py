@@ -46,7 +46,7 @@ def relativelyPrimesInRange(z):
 def rsa_key_generation():
     p = random.choice(primesInRange(3, 50))
     q = random.choice(primesInRange(3, 50))
-    while p == q or p * q > 255:
+    while p == q or p * q > 122:
         q = random.choice(primesInRange(3, 50))
     n = p * q
     z = (p - 1) * (q - 1)

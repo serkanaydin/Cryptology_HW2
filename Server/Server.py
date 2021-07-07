@@ -14,6 +14,8 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind((SERVER_HOST, SERVER_PORT))
 server_socket.listen()
 
+connected_list=[]
+
 
 def upload(message):
     uploader_username = message["data"]["username"]
@@ -36,6 +38,16 @@ def upload(message):
     insert_image(name=image_name, mode=mode, size=size, encrypted_image=encrypted_image,
                  uploader_name=uploader_username, aes=aes, iv=iv, digest=private_key_encrypted_digest)
     print("Image was sent")
+    for client in connected_list:
+        message={
+            "type":"NOTIFICATION",
+            "data":{
+                "username":uploader_username,
+                "image_name":image_name
+            }
+        }
+        print(client[0])
+        send(client[0],message)
 
 
 def register(message):
@@ -132,8 +144,11 @@ def recv(client_connection):
 
 
 def listen():
+    global connected_list
     while True:
         client_connection, client_address = server_socket.accept()
+        connected_list.append((client_connection,client_address))
+        print(connected_list)
         threading.Thread(target=server_response, args=(client_connection, client_address)).start()
 
 
