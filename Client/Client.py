@@ -126,17 +126,27 @@ def download_image(message):
         image_size = message["data"]["size"]
 
         uploader_public_key=RSA.decrypt_int(uploader_certificate,server_public_key)
-        digest = RSA.decrypt(digest,uploader_public_key)
-        aes = RSA.decrypt(requester_public_key_encrypted_aes,user_private_key)
-        iv = RSA.decrypt(requester_public_key_encrypted_iv, user_private_key)
-        aes_str=""
-        for hex in aes:
-            aes_str+= str(hex)
-        iv_str = ""
-        for hex in iv:
-            iv_str += str(hex)
-        print("before aes decrypt",aes)
-        AES.decrypt(encrypted_image,image_name,image_mode,image_size,aes_str,iv_str)
+        uploader_public_key=[int(uploader_public_key[0],16),int(uploader_public_key[1],16)]
+        print("upload_public_key",uploader_public_key)
+        digest = RSA.decrypt_int(digest,uploader_public_key)
+        incoming_digest = ""
+        for hex in digest:
+            incoming_digest += str(hex)
+        generated_digest=hashlib.sha256(encrypted_image).hexdigest().lower()
+        print("id",incoming_digest)
+        print("gd", generated_digest)
+        if incoming_digest==generated_digest:
+            print("Integrity provided")
+            aes = RSA.decrypt(requester_public_key_encrypted_aes,user_private_key)
+            iv = RSA.decrypt(requester_public_key_encrypted_iv, user_private_key)
+            aes_str=""
+            for hex in aes:
+                aes_str+= str(hex)
+            iv_str = ""
+            for hex in iv:
+                iv_str += str(hex)
+            print("before aes decrypt",aes)
+            AES.decrypt(encrypted_image,image_name,image_mode,image_size,aes_str,iv_str)
 
 
 

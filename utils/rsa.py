@@ -66,7 +66,7 @@ def encrypt_int(plaintext, public_key):
 def decrypt_int(ciphertext, private_key):
     decryptedList = []
     for num in ciphertext:
-        decryptedList.append(pow(num, int(private_key[1])) % int(private_key[0]))
+        decryptedList.append(hex(pow(num, int(private_key[1])) % int(private_key[0])).replace("0x",""))
     return decryptedList
 
 
